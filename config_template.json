@@ -1,0 +1,12 @@
+{
+    "container_url": "",
+    "sas_token": "",
+    "projects_definition_file": "/path/to/projects.csv",
+    "excluded_runs_list": "/path/to/excluded_runs.csv",
+    "scan_interval_seconds": 3600,
+    "upload_tmpdir": "/path/to/auto-irida-upload-tmp",
+    "run_parent_dirs": [
+	"/path/to/instrument_1",
+	"/path/to/instrument_2"
+    ]
+}
