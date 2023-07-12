@@ -90,6 +90,7 @@ def scan(config: dict[str, object]) -> Iterator[Optional[dict[str, object]]]:
 def find_fastq(run, library_id, read_type):
     """
     Find the fastq file for a specific library on a specific run.
+
     :param run: Sequencing run. Keys: ['sequencing_run_id', 'path', 'instrument_type']
     :type run: dict[str, str]
     :param library_id: Library ID
