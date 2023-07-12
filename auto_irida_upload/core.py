@@ -43,11 +43,16 @@ def find_run_dirs(config, check_upload_complete=True):
                 instrument_type = 'nextseq'
             ready_to_upload = os.path.exists(os.path.join(subdir, 'upload_complete.json'))
             upload_not_already_initiated = not os.path.exists(os.path.join(config['upload_staging_dir'], run_id))
+            not_excluded = True
+            if 'excluded_runs' in config:
+                not_excluded = not run_id in config['excluded_runs']
+
             conditions_checked = {
                 "is_directory": subdir.is_dir(),
                 "matches_illumina_run_id_format": ((matches_miseq_regex is not None) or
                                                    (matches_nextseq_regex is not None)),
                 "upload_not_already_initiated": upload_not_already_initiated,
+                "not_excluded": not_excluded,
             }
 
             if check_upload_complete:
