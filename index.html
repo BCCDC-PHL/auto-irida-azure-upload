@@ -50,7 +50,14 @@
 <li><a class="reference internal" href="#auto_irida_upload.core.upload_run"><code class="docutils literal notranslate"><span class="pre">upload_run()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#auto-irida-upload-samplesheet">auto_irida_upload.samplesheet</a></li>
+<li><a class="reference internal" href="#auto-irida-upload-samplesheet">auto_irida_upload.samplesheet</a><ul>
+<li><a class="reference internal" href="#auto_irida_upload.samplesheet.choose_samplesheet_to_parse"><code class="docutils literal notranslate"><span class="pre">choose_samplesheet_to_parse()</span></code></a></li>
+<li><a class="reference internal" href="#auto_irida_upload.samplesheet.find_samplesheets"><code class="docutils literal notranslate"><span class="pre">find_samplesheets()</span></code></a></li>
+<li><a class="reference internal" href="#auto_irida_upload.samplesheet.parse_samplesheet"><code class="docutils literal notranslate"><span class="pre">parse_samplesheet()</span></code></a></li>
+<li><a class="reference internal" href="#auto_irida_upload.samplesheet.parse_samplesheet_miseq"><code class="docutils literal notranslate"><span class="pre">parse_samplesheet_miseq()</span></code></a></li>
+<li><a class="reference internal" href="#auto_irida_upload.samplesheet.parse_samplesheet_nextseq"><code class="docutils literal notranslate"><span class="pre">parse_samplesheet_nextseq()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#auto-irida-upload-util">auto_irida_upload.util</a></li>
 </ul>
 </div>
@@ -97,15 +104,22 @@
 <span class="target" id="module-auto_irida_upload.core"></span><dl class="py function">
 <dt class="sig sig-object py" id="auto_irida_upload.core.find_fastq">
 <span class="sig-prename descclassname"><span class="pre">auto_irida_upload.core.</span></span><span class="sig-name descname"><span class="pre">find_fastq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#auto_irida_upload.core.find_fastq" title="Permalink to this definition"></a></dt>
-<dd><p>Find the fastq file for a specific library on a specific run.
-:param run: Sequencing run. Keys: [‘sequencing_run_id’, ‘path’, ‘instrument_type’]
-:type run: dict[str, str]
-:param library_id: Library ID
-:type library_id: str
-:param read_type: Read type (‘R1’ or ‘R2’)
-:type read_type: str
-:return: Path to fastq file
-:rtype: Optional[str]</p>
+<dd><p>Find the fastq file for a specific library on a specific run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>run</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – Sequencing run. Keys: [‘sequencing_run_id’, ‘path’, ‘instrument_type’]</p></li>
+<li><p><strong>library_id</strong> (<em>str</em>) – Library ID</p></li>
+<li><p><strong>read_type</strong> (<em>str</em>) – Read type (‘R1’ or ‘R2’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Path to fastq file</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -198,6 +212,70 @@ At the end of a scan, we should be able to determine which (if any) symlinks nee
 <section id="auto-irida-upload-samplesheet">
 <h1>auto_irida_upload.samplesheet<a class="headerlink" href="#auto-irida-upload-samplesheet" title="Permalink to this heading"></a></h1>
 <p>Functions for parsing Illumina SampleSheet files.</p>
+<span class="target" id="module-auto_irida_upload.samplesheet"></span><dl class="py function">
+<dt class="sig sig-object py" id="auto_irida_upload.samplesheet.choose_samplesheet_to_parse">
+<span class="sig-prename descclassname"><span class="pre">auto_irida_upload.samplesheet.</span></span><span class="sig-name descname"><span class="pre">choose_samplesheet_to_parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samplesheet_paths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#auto_irida_upload.samplesheet.choose_samplesheet_to_parse" title="Permalink to this definition"></a></dt>
+<dd><p>A run directory may have multiple SampleSheet.csv files in it. Choose only one to parse.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>samplesheet_paths</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – List of paths to SampleSheet.csv files</p></li>
+<li><p><strong>instrument_type</strong> (<em>str</em>) – Instrument type, should be one of: “miseq”, “nextseq”</p></li>
+<li><p><strong>run_id</strong> (<em>str</em>) – Sequencing run ID</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="auto_irida_upload.samplesheet.find_samplesheets">
+<span class="sig-prename descclassname"><span class="pre">auto_irida_upload.samplesheet.</span></span><span class="sig-name descname"><span class="pre">find_samplesheets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#auto_irida_upload.samplesheet.find_samplesheets" title="Permalink to this definition"></a></dt>
+<dd><p>Find SampleSheets in run directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>run_dir</strong> (<em>str</em>) – Path to sequencing run directory</p></li>
+<li><p><strong>instrument_type</strong> (<em>str</em>) – Instrument type (‘miseq’ or ‘nextseq’)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="auto_irida_upload.samplesheet.parse_samplesheet">
+<span class="sig-prename descclassname"><span class="pre">auto_irida_upload.samplesheet.</span></span><span class="sig-name descname"><span class="pre">parse_samplesheet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samplesheet_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#auto_irida_upload.samplesheet.parse_samplesheet" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>samplesheet_path</strong> (<em>str</em>) – </p></li>
+<li><p><strong>instrument_type</strong> (<em>str</em>) – One of <cite>miseq</cite> or <cite>nextseq</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="auto_irida_upload.samplesheet.parse_samplesheet_miseq">
+<span class="sig-prename descclassname"><span class="pre">auto_irida_upload.samplesheet.</span></span><span class="sig-name descname"><span class="pre">parse_samplesheet_miseq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samplesheet_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#auto_irida_upload.samplesheet.parse_samplesheet_miseq" title="Permalink to this definition"></a></dt>
+<dd><p>Parse a MiSeq SampleSheet. Returns None if parsing fails.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>samplesheet_path</strong> (<em>str</em>) – Path to SampleSheet file.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Parsed SampleSheet</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Optional[dict[str, object]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="auto_irida_upload.samplesheet.parse_samplesheet_nextseq">
+<span class="sig-prename descclassname"><span class="pre">auto_irida_upload.samplesheet.</span></span><span class="sig-name descname"><span class="pre">parse_samplesheet_nextseq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samplesheet_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#auto_irida_upload.samplesheet.parse_samplesheet_nextseq" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 <section id="auto-irida-upload-util">
 <h1>auto_irida_upload.util<a class="headerlink" href="#auto-irida-upload-util" title="Permalink to this heading"></a></h1>

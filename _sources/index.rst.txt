@@ -27,7 +27,7 @@ auto_irida_upload.samplesheet
 ============
 Functions for parsing Illumina SampleSheet files.
 
-.. automodule:: auto_irida_upload.models
+.. automodule:: auto_irida_upload.samplesheet
    :members:
 
 auto_irida_upload.util
