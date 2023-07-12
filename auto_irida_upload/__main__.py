@@ -74,6 +74,7 @@ def main():
             if quit_when_safe:
                 exit(0)
 
+            scan_interval = DEFAULT_SCAN_INTERVAL_SECONDS
             if "scan_interval_seconds" in config:
                 try:
                     scan_interval = float(str(config['scan_interval_seconds']))
