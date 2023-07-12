@@ -5,8 +5,6 @@ import logging
 import os
 import re
 
-
-
 import auto_irida_upload.util as util
 
 
@@ -116,6 +114,15 @@ def _parse_data_section_miseq_v1(samplesheet_path):
 
 def _determine_samplesheet_version(samplesheet_path, instrument_type):
     """
+    Determine SampleSheet version.
+    Note: Currently always returns 1. Allows for compatibility with future changes to SampleSheet formats.
+
+    :param samplesheet_path: Path to SampleSheet file.
+    :type samplesheet_path: str
+    :param instrument_type: Instrument type ('miseq' or 'nextseq')
+    :type instrument_type: str
+    :return: SampleSheet version
+    :rtype: int
     """
     samplesheet_version = None
     if instrument_type == 'miseq':
@@ -128,6 +135,8 @@ def _determine_samplesheet_version(samplesheet_path, instrument_type):
 
 def _parse_samplesheet_miseq_v1(samplesheet_path: str) -> dict[str, object]:
     """
+    Parse a MiSeq SampleSheet
+
     :param samplesheet_path: Path to SampleSheet to be parsed
     :type samplesheet_path: str
     :return: The parsed SampleSheet
@@ -336,7 +345,6 @@ def _parse_cloud_data_section_nextseq_v1(samplesheet_path):
     return cloud_data
 
 
-
 def _parse_samplesheet_nextseq_v1(samplesheet_path):
     """
     """
@@ -354,6 +362,12 @@ def _parse_samplesheet_nextseq_v1(samplesheet_path):
 
 def find_samplesheets(run_dir, instrument_type):
     """
+    Find SampleSheets in run directory.
+
+    :param run_dir: Path to sequencing run directory
+    :type run_dir: str
+    :param instrument_type: Instrument type ('miseq' or 'nextseq')
+    :type instrument_type: str
     """
     samplesheet_paths = None
     if instrument_type == 'miseq':
@@ -415,6 +429,12 @@ def choose_samplesheet_to_parse(samplesheet_paths: list[str], instrument_type: s
 
 def parse_samplesheet_miseq(samplesheet_path):
     """
+    Parse a MiSeq SampleSheet. Returns None if parsing fails.
+    
+    :param samplesheet_path: Path to SampleSheet file.
+    :type samplesheet_path: str
+    :return: Parsed SampleSheet
+    :rtype: Optional[dict[str, object]]
     """
     samplesheet = None
     version = _determine_samplesheet_version(samplesheet_path, 'miseq')

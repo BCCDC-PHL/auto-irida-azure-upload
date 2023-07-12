@@ -48,14 +48,22 @@ def main():
 
             scan_start_timestamp = datetime.datetime.now()
             for run in core.scan(config):
-                if run is not None:
+                required_run_keys = [
+                    'sequencing_run_id',
+                    'path',
+                    'instrument_type',
+                ]
+                if run is not None and all([k in run for k in required_run_keys]):
                     try:
                         config = auto_irida_upload.config.load_config(args.config)
                         logging.info(json.dumps({"event_type": "config_loaded", "config_file": os.path.abspath(args.config)}))
                     except json.decoder.JSONDecodeError as e:
                         logging.error(json.dumps({"event_type": "load_config_failed", "config_file": os.path.abspath(args.config)}))
-                    core.prepare_samplelist_file(config, run)
-                    core.upload_run(config, run)
+                    sample_list = core.prepare_samplelist(config, run)
+                    if len(sample_list) > 0:
+                        upload_dir = core.prepare_upload_dir(config, run, sample_list)
+                        if upload_dir is not None:
+                            core.upload_run(config, run, upload_dir)
                 if quit_when_safe:
                     exit(0)
             scan_complete_timestamp = datetime.datetime.now()
