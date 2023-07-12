@@ -1,0 +1,35 @@
+[Header]
+IEMFileVersion,5
+Investigator Name,Dr. Doctor
+Experiment Name,Top Secret Experiment & Data Sharing
+Date,1/1/2022
+Workflow,GenerateFASTQ
+Application,FASTQ Only
+Instrument Type,MiSeq
+Assay,Nextera DNA Flex
+Index Adapters,Nextera DNA CD Indexes (96 Indexes plated)
+Chemistry,Amplicon
+[Reads]
+151
+151
+[Settings]
+ReverseComplement,0
+Adapter,CTGTCTCTTATACACATCT
+[Data]
+Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
+S1,sample-01-A01,,,A01,H701,TAAGGCGA,H505,GTAAGGAG,data_sharing,
+S2,sample-02-B01,,,B01,H702,CGTACTAG,H517,GCGTAAGA,data_sharing,
+S3,sample-03-C01,,,C01,H703,AGGCAGAA,H506,ACTGCATA,top_secret,
+S4,sample-04-D01,,,D01,H705,GGACTCCT,H503,TATCCTCT,top_secret,
+S5,sample-05-E01,,,E01,H706,TAGGCATG,H516,CCTAGAGT,top_secret,
+S6,sample-06-F01,,,F01,H710,CGAGGCTG,H522,TTATGCGA,top_secret,
+S7,sample-07-G01,,,G01,H711,AAGAGGCA,H513,TCGACTAG,top_secret,
+S8,sample-08-H01,,,H01,H714,GCTCATGA,H510,CGTCTAAT,top_secret,
+S9,sample-09-A02,,,A02,H702,CGTACTAG,H506,ACTGCATA,top_secret,
+S10,sample-10-B02,,,B02,H703,AGGCAGAA,H505,GTAAGGAG,top_secret,
+S11,sample-11-C02,,,C02,H701,TAAGGCGA,H517,GCGTAAGA,top_secret,
+S12,sample-12-D02,,,D02,H707,CTCTCTAC,H503,TATCCTCT,top_secret,
+S13,sample-13-E02,,,E02,H712,GTAGAGGA,H516,CCTAGAGT,top_secret,
+S14,sample-14-F02,,,F02,H711,AAGAGGCA,H510,CGTCTAAT,top_secret,
+S15,pos-control-G02,,,G02,H714,GCTCATGA,H522,TTATGCGA,top_secret,
+S16,neg-control-H02,,,H02,H710,CGAGGCTG,H513,TCGACTAG,top_secret,

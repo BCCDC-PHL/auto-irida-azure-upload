@@ -1,0 +1,10 @@
+{
+    "container_url": "",
+    "sas_token": "",
+    "projects_definition_file": "tests/data/configs/projects_01.csv",
+    "excluded_runs_list": "tests/data/configs/excluded_runs_01.csv",
+    "upload_staging_dir": "upload_staging",
+    "run_parent_dirs": [
+	"tests/data/run_parent_dirs/M00123/22"
+    ]
+}
