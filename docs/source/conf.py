@@ -8,9 +8,9 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'BCCDC-PHL TB Genomics Database'
-copyright = '2022, Dan Fornika, Sherrie Wang, James Zlosnik'
-author = 'Dan Fornika, Sherrie Wang, James Zlosnik'
+project = 'BCCDC-PHL Auto IRIDA Upload'
+copyright = '2023, Dan Fornika'
+author = 'Dan Fornika'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
