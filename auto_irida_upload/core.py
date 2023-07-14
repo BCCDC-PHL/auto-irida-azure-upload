@@ -329,6 +329,7 @@ def upload_run(config, run, upload_dir):
         '--output-type', 'json',
         '--from-to=LocalBlob',
         '--metadata=upload_id=' + upload_id,
+        '--exclude-pattern=*NML_Upload_Finished*',
         upload_dir,
         upload_url,        
     ]
