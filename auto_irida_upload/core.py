@@ -311,20 +311,57 @@ def upload_run(config, run, upload_dir):
     Initiate an analysis on one directory of fastq files.
     """
     run_id = run['sequencing_run_id']
-    
+    upload_successful = False
+    upload_id = str(uuid.uuid4())
+
+    upload_url = '/'.join([
+        config['container_url'],
+        upload_id,
+        config['sas_token'],
+    ])
+
     azcopy_command = [
         'azcopy',
         'cp',
+        '--put-md5',
         '--recursive',
-        '--folow-symlinks',
+        '--follow-symlinks',
+        '--output-type', 'json',
+        '--from-to=LocalBlob',
+        '--metadata=upload_id=' + upload_id,
+        upload_dir,
+        upload_url,        
     ]
 
     logging.info(json.dumps({"event_type": "upload_started", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
     try:
-        # subprocess.run(azcopy_command, capture_output=True, check=True)
-        time.sleep(2)
+        subprocess.run(azcopy_command, capture_output=False, check=True)
+        upload_successful = True
+        time.sleep(5)
         logging.info(json.dumps({"event_type": "upload_completed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
     except subprocess.CalledProcessError as e:
         logging.error(json.dumps({"event_type": "upload_failed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
-    except OSError as e:
-        logging.error(json.dumps({"event_type": "delete_analysis_work_dir_failed", "sequencing_run_id": analysis_run_id, "analysis_work_dir_path": analysis_work_dir}))
+
+    if upload_successful:
+        upload_complete_file_contents = {"action": "UPLOAD", "result": upload_successful, "job_id": upload_id}
+        upload_complete_filename = upload_id + "-NML_Upload_Finished.json"
+        upload_complete_path = os.path.join(upload_dir, upload_complete_filename)
+        with open(upload_complete_path, "w", encoding="utf-8") as f:
+            json.dump(upload_complete_file_contents, f)
+
+        upload_url = config['container_url'] + config['sas_token']
+
+        azcopy_command = [
+            'azcopy',
+            'cp',
+            '--output-type', 'json',
+            '--from-to=LocalBlob',
+            upload_complete_path,
+            upload_url,
+        ]
+
+        try:
+            subprocess.run(azcopy_command, capture_output=False, check=True)
+            logging.info(json.dumps({"event_type": "upload_confirmation_completed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
+        except subprocess.CalledProcessError as e:
+            logging.error(json.dumps({"event_type": "upload_confirmation_failed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
