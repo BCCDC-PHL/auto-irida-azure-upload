@@ -2,12 +2,12 @@ from setuptools import setup, find_namespace_packages
 
 
 setup(
-    name='auto-irida-upload',
+    name='auto-irida-azure-upload',
     version='0.1.0-alpha',
     packages=find_namespace_packages(),
     entry_points={
         "console_scripts": [
-            "auto-irida-upload = auto_irida_upload.__main__:main",
+            "auto-irida-azure-upload = auto_irida_azure_upload.__main__:main",
         ]
     },
     scripts=[],
@@ -15,8 +15,8 @@ setup(
     },
     install_requires=[
     ],
-    description='Automated upload of sequence data to IRIDA platform',
-    url='https://github.com/BCCDC-PHL/auto-irida-upload',
+    description='Automated upload of sequence data to Azure Blob Storage, for staging to IRIDA',
+    url='https://github.com/BCCDC-PHL/auto-irida-azure-upload',
     author='Dan Fornika',
     author_email='dan.fornika@bccdc.ca',
     include_package_data=True,

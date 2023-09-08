@@ -5,7 +5,7 @@ import logging
 import os
 import re
 
-import auto_irida_upload.util as util
+import auto_irida_azure_upload.util as util
 
 
 def _parse_header_section_miseq_v1(samplesheet_path):

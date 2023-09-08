@@ -11,7 +11,7 @@ import uuid
 
 from typing import Iterator, Optional
 
-import auto_irida_upload.samplesheet as samplesheet
+import auto_irida_azure_upload.samplesheet as samplesheet
 
 
 def find_run_dirs(config, check_upload_complete=True):

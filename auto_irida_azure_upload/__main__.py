@@ -7,8 +7,8 @@ import logging
 import os
 import time
 
-import auto_irida_upload.config
-import auto_irida_upload.core as core
+import auto_irida_azure_upload.config
+import auto_irida_azure_upload.core as core
 
 DEFAULT_SCAN_INTERVAL_SECONDS = 3600.0
 
@@ -39,7 +39,7 @@ def main():
         try:
             if args.config:
                 try:
-                    config = auto_irida_upload.config.load_config(args.config)
+                    config = auto_irida_azure_upload.config.load_config(args.config)
                     logging.info(json.dumps({"event_type": "config_loaded", "config_file": os.path.abspath(args.config)}))
                 except json.decoder.JSONDecodeError as e:
                     # If we fail to load the config file, we continue on with the
@@ -55,7 +55,7 @@ def main():
                 ]
                 if run is not None and all([k in run for k in required_run_keys]):
                     try:
-                        config = auto_irida_upload.config.load_config(args.config)
+                        config = auto_irida_azure_upload.config.load_config(args.config)
                         logging.info(json.dumps({"event_type": "config_loaded", "config_file": os.path.abspath(args.config)}))
                     except json.decoder.JSONDecodeError as e:
                         logging.error(json.dumps({"event_type": "load_config_failed", "config_file": os.path.abspath(args.config)}))
