@@ -1,4 +1,4 @@
-# auto-irida-upload
+# auto-irida-azure-upload
 Automated upload of sequence data to the IRIDA platform.
 
 # Installation
@@ -7,7 +7,7 @@ Automated upload of sequence data to the IRIDA platform.
 Start the tool as follows:
 
 ```bash
-auto-irida-upload --config config.json
+auto-irida-azure-upload --config config.json
 ```
 
 See the Configuration section of this document for details on preparing a configuration file.
@@ -15,7 +15,7 @@ See the Configuration section of this document for details on preparing a config
 More detailed logs can be produced by controlling the log level using the `--log-level` flag:
 
 ```bash
-auto-irida-upload --config config.json --log-level debug
+auto-irida-azure-upload --config config.json --log-level debug
 ```
 
 # Configuration
