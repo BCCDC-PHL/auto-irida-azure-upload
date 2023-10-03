@@ -336,8 +336,16 @@ def upload_run(config, run, upload_dir):
 
     logging.info(json.dumps({"event_type": "upload_started", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
     try:
-        subprocess.run(azcopy_command, capture_output=False, check=True)
-        upload_successful = True
+        upload_successful = False
+        data_upload_result = subprocess.run(azcopy_command, capture_output=True, check=True, text=True)
+        for line in data_upload_result.stdout.splitlines():
+            line_json = json.loads(line)
+            if "MessageContent" in line_json and line_json["MessageContent"].startswith("{"):
+                parsed_message_content = json.loads(line_json["MessageContent"])
+                line_json["MessageContent"] = parsed_message_content
+            logging.info(json.dumps(line_json))
+        if data_upload_result.returncode == 0:
+            upload_successful = True
         time.sleep(5)
         logging.info(json.dumps({"event_type": "upload_completed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
     except subprocess.CalledProcessError as e:
@@ -362,7 +370,14 @@ def upload_run(config, run, upload_dir):
         ]
 
         try:
-            subprocess.run(azcopy_command, capture_output=False, check=True)
-            logging.info(json.dumps({"event_type": "upload_confirmation_completed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
+            upload_complete_file_result = subprocess.run(azcopy_command, capture_output=True, check=True, text=True)
+            for line in upload_complete_file_result.stdout.splitlines():
+                line_json = json.loads(line)
+                if "MessageContent" in line_json and line_json["MessageContent"].startswith("{"):
+                    parsed_message_content = json.loads(line_json["MessageContent"])
+                    line_json["MessageContent"] = parsed_message_content
+                logging.info(json.dumps(line_json))
+            if upload_complete_file_result.returncode == 0:
+                logging.info(json.dumps({"event_type": "upload_confirmation_completed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
         except subprocess.CalledProcessError as e:
             logging.error(json.dumps({"event_type": "upload_confirmation_failed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
