@@ -2,6 +2,22 @@
 Automated upload of sequence data to the IRIDA platform.
 
 # Installation
+This tool assumes that the system has `azcopy` on the `PATH`. Follow the directions [here](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) to
+download and install azcopy.
+
+It's recommended to install the tool into an isolated environment using a tool such as conda, mamba or virtualenv:
+```
+conda create -n auto-irida-azure-upload python=3 pip
+conda activate auto-irida-azure-upload
+```
+
+The tool is pip-installable. Using the `-e` flag will allow updates/hotfixes to be applied directly to the codebase and automatically installed.
+
+```
+git clone https://github.com/BCCDC-PHL/auto-irida-azure-upload.git
+cd auto-irida-azure-upload
+pip install -e .
+```
 
 # Usage
 Start the tool as follows:
