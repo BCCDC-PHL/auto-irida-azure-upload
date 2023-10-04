@@ -43,7 +43,7 @@ def find_run_dirs(config, check_upload_complete=True):
                 instrument_type = 'nextseq'
             ready_to_upload = os.path.exists(os.path.join(subdir, 'upload_complete.json'))
             upload_not_already_initiated = not os.path.exists(os.path.join(config['upload_staging_dir'], run_id))
-            not_excluded = True
+            not_excluded = False
             if 'excluded_runs' in config:
                 not_excluded = not run_id in config['excluded_runs']
 
@@ -65,10 +65,10 @@ def find_run_dirs(config, check_upload_complete=True):
                 run['path'] = os.path.abspath(subdir.path)
                 run['sequencing_run_id'] = run_id
                 run['instrument_type'] = instrument_type
-            yield run
-        else:
-            logging.debug(json.dumps({"event_type": "directory_skipped", "run_directory_path": os.path.abspath(subdir.path), "conditions_checked": conditions_checked}))
-            yield None
+                yield run
+            else:
+                logging.debug(json.dumps({"event_type": "directory_skipped", "run_directory_path": os.path.abspath(subdir.path), "conditions_checked": conditions_checked}))
+                yield None
 
 
 def scan(config: dict[str, object]) -> Iterator[Optional[dict[str, object]]]:
@@ -105,7 +105,11 @@ def find_fastq(run, library_id, read_type):
     run_id = run.get('sequencing_run_id', None)
     instrument_type = run.get('instrument_type', None)
     if instrument_type == 'miseq':
+        # If the library ID contains underscores or periods, replace them with dashes.
+        # Occasionally a library ID is entered into the SampleSheet with underscores or periods,
+        # but the fastq files are named with dashes instead.
         library_id_cleaned = library_id.replace('_', '-').replace('.', '-')
+        # New-style MiSeq runs have an 'Alignment' directory for each demultiplexing.
         if os.path.exists(os.path.join(run_path, 'Alignment_1')):
             alignment_dirs_glob = os.path.join(run_path, 'Alignment_*')
             alignment_dirs = list(sorted(glob.glob(alignment_dirs_glob), reverse=True))
@@ -126,6 +130,7 @@ def find_fastq(run, library_id, read_type):
                                                   "library_id": library_id,
                                                   "read_type": read_type,
                                                   "fastq_path": fastq_path}))
+        # Old-style MiSeq runs store fastqs in 'Data/Intensities/BaseCalls' directory.
         elif os.path.exists(os.path.join(run_path, 'Data', 'Intensities', 'BaseCalls')):
             fastq_dir_path = os.path.join(run_path, 'Data', 'Intensities', 'BaseCalls')
             fastq_glob = os.path.join(fastq_dir_path, library_id_cleaned +
@@ -356,7 +361,7 @@ def upload_run(config, run, upload_dir):
         upload_complete_filename = upload_id + "-NML_Upload_Finished.json"
         upload_complete_path = os.path.join(upload_dir, upload_complete_filename)
         with open(upload_complete_path, "w", encoding="utf-8") as f:
-            json.dump(upload_complete_file_contents, f)
+            json.dump(upload_complete_file_contents, f, indent=2)
 
         upload_url = config['container_url'] + config['sas_token']
 
