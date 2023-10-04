@@ -8,8 +8,8 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'BCCDC-PHL Auto IRIDA Upload'
-copyright = '2023, Dan Fornika'
+project = 'BCCDC-PHL Auto IRIDA Azure Upload'
+copyright = '2023, BCCDC Public Health Laboratory'
 author = 'Dan Fornika'
 
 # -- General configuration ---------------------------------------------------
