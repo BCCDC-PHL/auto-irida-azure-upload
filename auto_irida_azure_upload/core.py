@@ -213,7 +213,7 @@ def prepare_samplelist(config, run):
                             samplelist_library['Project_ID'] = project['remote_project_id']
                             samplelist_library['Project_Name'] = project['remote_project_name']
                             samplelist_library['Project_ID_Local'] = project['local_project_id']
-                            samplelist_library['Project_Name_Local'] = project['local_project_id']
+                            samplelist_library['Project_Name_Local'] = project['local_project_name']
                             samples_to_upload.append(samplelist_library)
     elif parsed_samplesheet is not None and instrument_type == 'miseq':
         if 'data' in parsed_samplesheet:
