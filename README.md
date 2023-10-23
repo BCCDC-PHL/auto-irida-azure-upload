@@ -52,6 +52,15 @@ This tool takes a single config file, in JSON format, with the following structu
 }
 ```
 
+The `projects_definition_file` should be .csv format and should include the following fields:
+
+```
+local_project_id
+local_project_name
+remote_project_id
+remote_project_name
+```
+
 # Logging
 This tool outputs [structured logs](https://www.honeycomb.io/blog/structured-logging-and-your-team/) in [JSON Lines](https://jsonlines.org/) format:
 

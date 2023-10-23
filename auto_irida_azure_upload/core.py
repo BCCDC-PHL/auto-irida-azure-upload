@@ -1,5 +1,6 @@
 import datetime
 import glob
+import hashlib
 import json
 import logging
 import os
@@ -210,7 +211,9 @@ def prepare_samplelist(config, run):
                             samplelist_library = {}
                             samplelist_library['Sample_Name'] = library['sample_id']
                             samplelist_library['Project_ID'] = project['remote_project_id']
+                            samplelist_library['Project_Name'] = project['remote_project_name']
                             samplelist_library['Project_ID_Local'] = project['local_project_id']
+                            samplelist_library['Project_Name_Local'] = project['local_project_id']
                             samples_to_upload.append(samplelist_library)
     elif parsed_samplesheet is not None and instrument_type == 'miseq':
         if 'data' in parsed_samplesheet:
@@ -228,7 +231,9 @@ def prepare_samplelist(config, run):
                             else:
                                 samplelist_library['Sample_Name'] = library['sample_id']
                             samplelist_library['Project_ID'] = project['remote_project_id']
+                            samplelist_library['Project_Name'] = project['remote_project_name']
                             samplelist_library['Project_ID_Local'] = project['local_project_id']
+                            samplelist_library['Project_Name_Local'] = project['local_project_name']
                             samples_to_upload.append(samplelist_library)
 
     for sample in samples_to_upload:
@@ -249,24 +254,8 @@ def prepare_samplelist(config, run):
             sample['File_Reverse_Absolute_Path'] = fastq_absolute_path_r2
             fastq_filename_r2 = os.path.basename(fastq_absolute_path_r2)
             sample['File_Reverse'] = fastq_filename_r2
-    
+
     return samples_to_upload
-
-
-    if len(samples_to_upload) > 0:
-        upload_staging_dir = config['upload_staging_dir']
-        samplelist_path = os.path.join(upload_staging_dir, run_id, 'SampleList.csv')
-        if os.path.exists(upload_staging_dir):
-            run_upload_staging_dir = os.path.join(upload_staging_dir, run_id)
-            if os.path.exists(run_upload_staging_dir):
-                shutil.rmtree(run_upload_staging_dir)
-            os.makedirs(run_upload_staging_dir)
-            with open(samplelist_path, 'w') as f:
-                for line in samplelist_header:
-                    f.write(line + '\n')
-            with open(samplelist_path, 'a') as f:
-                for sample in samples_to_upload:
-                    f.write(','.join([sample['Sample_Name'], sample['Project_ID']]) + '\n')
 
 
 def prepare_upload_dir(config, run, sample_list):
@@ -285,15 +274,18 @@ def prepare_upload_dir(config, run, sample_list):
     run_id = run['sequencing_run_id']
     upload_staging_dir = config['upload_staging_dir']
     run_upload_staging_dir = os.path.join(upload_staging_dir, run_id)
+
     sample_list_headers = [
         'Sample_Name',
         'Project_ID',
         'File_Forward',
         'File_Reverse',
     ]
+
     if not os.path.exists(run_upload_staging_dir):
         os.makedirs(run_upload_staging_dir)
         sample_list_path = os.path.join(run_upload_staging_dir, 'SampleList.csv')
+        
         with open(sample_list_path, 'w') as f:
             f.write('[Data]\n')
             f.write(','.join(sample_list_headers) + '\n')
@@ -306,10 +298,47 @@ def prepare_upload_dir(config, run, sample_list):
                 os.symlink(symlink_src_fwd, symlink_dest_fwd)
                 os.symlink(symlink_src_rev, symlink_dest_rev)
 
+        upload_prepared_path = os.path.join(run_upload_staging_dir, 'upload_prepared.json')
+        libraries = []
+        for sample in sample_list:
+            fastq_forward_path = os.path.join(run_upload_staging_dir, sample['File_Forward'])
+            fastq_forward_realpath = os.path.realpath(fastq_forward_path)
+            fastq_forward_md5 = None
+            with open(fastq_forward_realpath, 'rb') as f:
+                fastq_forward_hash = hashlib.md5()
+                while chunk := f.read(8192):
+                    fastq_forward_hash.update(chunk)
+                fastq_forward_md5 = fastq_forward_hash.hexdigest()
+            fastq_reverse_path = os.path.join(run_upload_staging_dir, sample['File_Reverse'])
+            fastq_reverse_realpath = os.path.realpath(fastq_reverse_path)
+            fastq_reverse_md5 = None
+            with open(fastq_reverse_realpath, 'rb') as f:
+                fastq_reverse_hash = hashlib.md5()
+                while chunk := f.read(8192):
+                    fastq_reverse_hash.update(chunk)
+                fastq_reverse_md5 = fastq_reverse_hash.hexdigest()
+            
+            library = {}
+            library['library_id'] = sample['Sample_Name']
+            library['local_project_id'] = sample['Project_ID_Local']
+            library['local_project_name'] = sample['Project_Name_Local']
+            library['remote_project_id'] = sample['Project_ID']
+            library['remote_project_name'] = sample['Project_Name']
+            library['fastq_forward_md5'] = fastq_forward_md5
+            library['fastq_reverse_md5'] = fastq_reverse_md5
+            libraries.append(library)
+
+        upload_prepared = {
+            'sequencing_run_id': run_id,
+            'libraries': libraries,
+        }
+        with open(upload_prepared_path, 'w') as f:
+            json.dump(upload_prepared, f, indent=2)
+
         return run_upload_staging_dir
     else:
         return None
-                
+
 
 def upload_run(config, run, upload_dir):
     """
@@ -340,6 +369,14 @@ def upload_run(config, run, upload_dir):
     ]
 
     logging.info(json.dumps({"event_type": "upload_started", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
+    timestamp_upload_started = datetime.datetime.now().isoformat()
+    upload_started_path = os.path.join(upload_dir, 'upload_started.json')
+    upload_started_file_contents = {
+        'timestamp_upload_started': timestamp_upload_started,
+    }
+    with open(upload_started_path, 'w', encoding='utf-8') as f:
+        json.dump(upload_started_file_contents, f, indent=2)
+        f.write("\n")
     try:
         upload_successful = False
         data_upload_result = subprocess.run(azcopy_command, capture_output=True, check=True, text=True)
@@ -351,17 +388,27 @@ def upload_run(config, run, upload_dir):
             logging.info(json.dumps(line_json))
         if data_upload_result.returncode == 0:
             upload_successful = True
-        time.sleep(5)
+            upload_completed_timestamp = datetime.datetime.now().isoformat()
+            upload_completed_path = os.path.join(upload_dir, 'upload_completed.json')
+            upload_completed_file_contents = {
+                'timestamp_upload_completed': upload_completed_timestamp,
+            }
+            with open(upload_completed_path, 'w', encoding='utf-8') as f:
+                json.dump(upload_completed_file_contents, f, indent=2)
+                f.write("\n")
         logging.info(json.dumps({"event_type": "upload_completed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
+        time.sleep(5)
+        
     except subprocess.CalledProcessError as e:
         logging.error(json.dumps({"event_type": "upload_failed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
 
     if upload_successful:
-        upload_complete_file_contents = {"action": "UPLOAD", "result": upload_successful, "job_id": upload_id}
-        upload_complete_filename = upload_id + "-NML_Upload_Finished.json"
-        upload_complete_path = os.path.join(upload_dir, upload_complete_filename)
-        with open(upload_complete_path, "w", encoding="utf-8") as f:
-            json.dump(upload_complete_file_contents, f, indent=2)
+        nml_upload_finished_file_contents = {"action": "UPLOAD", "result": upload_successful, "job_id": upload_id}
+        nml_upload_finished_filename = upload_id + "-NML_Upload_Finished.json"
+        nml_upload_finished_path = os.path.join(upload_dir, nml_upload_finished_filename)
+        with open(nml_upload_finished_path, "w", encoding="utf-8") as f:
+            json.dump(nml_upload_finished_file_contents, f, indent=2)
+            f.write("\n")
 
         upload_url = config['container_url'] + config['sas_token']
 
@@ -370,19 +417,19 @@ def upload_run(config, run, upload_dir):
             'cp',
             '--output-type', 'json',
             '--from-to=LocalBlob',
-            upload_complete_path,
+            nml_upload_finished_path,
             upload_url,
         ]
 
         try:
-            upload_complete_file_result = subprocess.run(azcopy_command, capture_output=True, check=True, text=True)
-            for line in upload_complete_file_result.stdout.splitlines():
+            nml_upload_finished_file_result = subprocess.run(azcopy_command, capture_output=True, check=True, text=True)
+            for line in nml_upload_finished_file_result.stdout.splitlines():
                 line_json = json.loads(line)
                 if "MessageContent" in line_json and line_json["MessageContent"].startswith("{"):
                     parsed_message_content = json.loads(line_json["MessageContent"])
                     line_json["MessageContent"] = parsed_message_content
                 logging.info(json.dumps(line_json))
-            if upload_complete_file_result.returncode == 0:
+            if nml_upload_finished_file_result.returncode == 0:
                 logging.info(json.dumps({"event_type": "upload_confirmation_completed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
         except subprocess.CalledProcessError as e:
             logging.error(json.dumps({"event_type": "upload_confirmation_failed", "sequencing_run_id": run_id, "azcopy_command": " ".join(azcopy_command)}))
