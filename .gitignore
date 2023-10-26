@@ -1,7 +1,9 @@
 *~
 dev-config.json
 test-config.json
+prod-config.json
 projects.csv
 excluded_runs.csv
+upload_staging
 *.egg-info
 *.pyc

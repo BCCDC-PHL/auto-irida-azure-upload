@@ -145,7 +145,7 @@ def find_fastq(run, library_id, read_type):
                                           "read_type": read_type,
                                           "fastq_path": fastq_path}))
         else:
-            logging.debug(json.dumps({"event_type": "fastq_file_not_found",
+            logging.error(json.dumps({"event_type": "fastq_file_not_found",
                                       "sequencing_run_id": run_id,
                                       "library_id": library_id,
                                       "read_type": read_type,
@@ -169,7 +169,7 @@ def find_fastq(run, library_id, read_type):
                                               "read_type": read_type,
                                               "fastq_path": fastq_path}))
         else:
-            logging.debug(json.dumps({"event_type": "fastq_file_not_found",
+            logging.error(json.dumps({"event_type": "fastq_file_not_found",
                                       "sequencing_run_id": run_id,
                                       "library_id": library_id,
                                       "read_type": read_type,
@@ -266,7 +266,7 @@ def prepare_upload_dir(config, run, sample_list):
     :type config: dict[str, object]
     :param run:
     :type run: dict[str, str]
-    :param sample_list:
+    :param sample_list: List of samples to upload. Keys: ['Sample_Name', 'Project_ID', 'File_Forward', 'File_Forward_Absolute_Path', 'File_Reverse', ''File_Reverse_Absolute_Path']
     :type sample_list: list[dict[str, str]]
     :return: Upload dir path
     :rtype: path
@@ -290,6 +290,9 @@ def prepare_upload_dir(config, run, sample_list):
             f.write('[Data]\n')
             f.write(','.join(sample_list_headers) + '\n')
             for sample in sample_list:
+                all_headers_present = all([header in sample.keys() for header in sample_list_headers])
+                if not all_headers_present:
+                    continue
                 f.write(','.join([sample[k] for k in sample_list_headers]) + '\n')
                 symlink_src_fwd = sample['File_Forward_Absolute_Path']
                 symlink_dest_fwd = os.path.join(run_upload_staging_dir, sample['File_Forward'])
@@ -301,6 +304,9 @@ def prepare_upload_dir(config, run, sample_list):
         upload_prepared_path = os.path.join(run_upload_staging_dir, 'upload_prepared.json')
         libraries = []
         for sample in sample_list:
+            all_headers_present = all([header in sample.keys() for header in sample_list_headers])
+            if not all_headers_present:
+                continue
             fastq_forward_path = os.path.join(run_upload_staging_dir, sample['File_Forward'])
             fastq_forward_realpath = os.path.realpath(fastq_forward_path)
             fastq_forward_md5 = None
@@ -328,12 +334,16 @@ def prepare_upload_dir(config, run, sample_list):
             library['fastq_reverse_md5'] = fastq_reverse_md5
             libraries.append(library)
 
+        if len(libraries) < 1:
+            return None
+
         upload_prepared = {
             'sequencing_run_id': run_id,
             'libraries': libraries,
         }
         with open(upload_prepared_path, 'w') as f:
             json.dump(upload_prepared, f, indent=2)
+            f.write("\n")
 
         return run_upload_staging_dir
     else:
