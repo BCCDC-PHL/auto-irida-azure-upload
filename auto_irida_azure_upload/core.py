@@ -292,6 +292,7 @@ def prepare_upload_dir(config, run, sample_list):
             for sample in sample_list:
                 all_headers_present = all([header in sample.keys() for header in sample_list_headers])
                 if not all_headers_present:
+                    logging.error(json.dumps({"event_type": "samplelist_headers_missing", "sequencing_run_id": run_id, "library_id": sample.get("Sample_Name", "unknown"), "expected_headers": sample_list_headers, "actual_keys": list(sample.keys()), "missing_headers": [header for header in sample_list_headers if header not in sample.keys()]}))
                     continue
                 f.write(','.join([sample[k] for k in sample_list_headers]) + '\n')
                 symlink_src_fwd = sample['File_Forward_Absolute_Path']
@@ -306,6 +307,7 @@ def prepare_upload_dir(config, run, sample_list):
         for sample in sample_list:
             all_headers_present = all([header in sample.keys() for header in sample_list_headers])
             if not all_headers_present:
+                logging.error(json.dumps({"event_type": "samplelist_headers_missing", "sequencing_run_id": run_id, "library_id": sample.get("Sample_Name", "unknown"), "expected_headers": sample_list_headers, "actual_headers": list(sample.keys()), "missing_headers": [header for header in sample_list_headers if header not in sample.keys()]}))
                 continue
             fastq_forward_path = os.path.join(run_upload_staging_dir, sample['File_Forward'])
             fastq_forward_realpath = os.path.realpath(fastq_forward_path)
