@@ -264,7 +264,7 @@ def prepare_upload_dir(config, run, sample_list):
 
     :param config:
     :type config: dict[str, object]
-    :param run:
+    :param run: Sequencing run to prepare upload directory for. Keys: ['sequencing_run_id', 'path', 'instrument_type']
     :type run: dict[str, str]
     :param sample_list: List of samples to upload. Keys: ['Sample_Name', 'Project_ID', 'File_Forward', 'File_Forward_Absolute_Path', 'File_Reverse', ''File_Reverse_Absolute_Path']
     :type sample_list: list[dict[str, str]]
