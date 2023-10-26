@@ -1,2 +1,3 @@
-local_project_id,remote_project_id
-data_sharing,42
+local_project_id,local_project_name,remote_project_id,remote_project_name
+data_sharing,Data Sharing,42,BC Data
+new_project,New Project,48,BC New Test Project

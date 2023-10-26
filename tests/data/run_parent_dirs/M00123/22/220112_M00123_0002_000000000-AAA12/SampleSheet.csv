@@ -2,7 +2,7 @@
 IEMFileVersion,5
 Investigator Name,Dr. Doctor
 Experiment Name,Top Secret Experiment & Data Sharing
-Date,1/1/2022
+Date,1/12/2022
 Workflow,GenerateFASTQ
 Application,FASTQ Only
 Instrument Type,MiSeq
@@ -17,9 +17,6 @@ ReverseComplement,0
 Adapter,CTGTCTCTTATACACATCT
 [Data]
 Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
-S1,sample-01-A01,,,A01,H701,TAAGGCGA,H505,GTAAGGAG,data_sharing,
+S1,sample-01-A01,,,A01,H701,TAAGGCGA,H505,GTAAGGAG,top_secret,
 S2,sample-02-B01,,,B01,H702,CGTACTAG,H517,GCGTAAGA,data_sharing,
 S3,sample-03-C01,,,C01,H703,AGGCAGAA,H506,ACTGCATA,top_secret,
-S4,sample-04-D01,,,D01,H705,GGACTCCT,H503,TATCCTCT,top_secret,
-S5,sample-05-E01,,,E01,H706,GGTCAAGA,H508,AATCAATA,new_project,
-S6,sample-06-F01,,,F01,H707,GTACAGGT,H512,TTACGAAT,new_project,
