@@ -199,7 +199,7 @@ def prepare_samplelist(config, run):
     samplesheet_to_parse = samplesheet.choose_samplesheet_to_parse(run_samplesheets, instrument_type, run_id)
 
     parsed_samplesheet = None
-    if os.path.exists(samplesheet_to_parse):
+    if samplesheet_to_parse is not None and os.path.exists(samplesheet_to_parse):
         parsed_samplesheet = samplesheet.parse_samplesheet(samplesheet_to_parse, instrument_type)
 
     if parsed_samplesheet is not None and instrument_type == 'nextseq':
