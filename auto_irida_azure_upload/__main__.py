@@ -59,6 +59,9 @@ def main():
                         logging.info(json.dumps({"event_type": "config_loaded", "config_file": os.path.abspath(args.config)}))
                     except json.decoder.JSONDecodeError as e:
                         logging.error(json.dumps({"event_type": "load_config_failed", "config_file": os.path.abspath(args.config)}))
+                    downsampling_inputs = core.prepare_downsampling_inputs(config, run)
+                    print(json.dumps(downsampling_inputs, indent=4))
+                    exit(0)
                     sample_list = core.prepare_samplelist(config, run)
                     if len(sample_list) > 0:
                         upload_dir = core.prepare_upload_dir(config, run, sample_list)

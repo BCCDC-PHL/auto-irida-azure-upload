@@ -61,6 +61,31 @@ remote_project_id
 remote_project_name
 ```
 
+## Downsampling
+
+If downsampling is needed prior to upload, add the following to the `config.json` file:
+
+```json
+{
+  "downsample_reads": true
+}
+```
+
+...and the following fields to the `projects.csv` file:
+
+```
+downsample_reads
+genome_size_mb
+max_depth
+```
+
+# Application Flowchart
+
+```mermaid
+main('__main__.main')
+main --> scan('core.scan')
+```
+
 # Logging
 This tool outputs [structured logs](https://www.honeycomb.io/blog/structured-logging-and-your-team/) in [JSON Lines](https://jsonlines.org/) format:
 

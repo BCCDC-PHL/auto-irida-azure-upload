@@ -176,7 +176,85 @@ def find_fastq(run, library_id, read_type):
                                       "fastq_path": fastq_path}))
 
     return fastq_path
-        
+
+
+def prepare_downsampling_inputs(config, run):
+    """
+    Prepare a SampleSheet to use for downsampling.
+
+    :param config: Application config. 
+    :type config: dict[str, object]
+    :param run: Sequencing run to prepare SampleSheet.csv file for. Keys: ['sequencing_run_id', 'path', 'instrument_type']
+    :type run: dict[str, str]
+    :return: Downsampling inputs. { local_project_id: { project_id: str, samplesheet: list[dict[str, str]], genome_size_mb: int, max_depth: int } }. samplesheet: [ { ID: str, R1: str, R2: str } ]
+    :rtype: dict[str, dict[str, object]]
+    """
+    downsampling_inputs_by_project_id = {}
+    run_id = run['sequencing_run_id']
+    run_dir = run['path']
+    instrument_type = run['instrument_type']
+    run_samplesheets = samplesheet.find_samplesheets(run_dir, instrument_type)
+    samplesheet_to_parse = samplesheet.choose_samplesheet_to_parse(run_samplesheets, instrument_type, run_id)
+
+    parsed_samplesheet = None
+    if samplesheet_to_parse is not None and os.path.exists(samplesheet_to_parse):
+        parsed_samplesheet = samplesheet.parse_samplesheet(samplesheet_to_parse, instrument_type)
+
+    if parsed_samplesheet is not None and instrument_type == 'nextseq':
+        if 'cloud_data' in parsed_samplesheet:
+            for library in parsed_samplesheet['cloud_data']:
+                if 'project_name' in library:
+                    for project in config['projects']:
+                        if library['project_name'] == project['local_project_id'] and project.get('downsample_reads', False):
+                            local_project_id = project['local_project_id']
+                            if local_project_id not in downsampling_inputs_by_project_id:
+                                downsampling_inputs_by_project_id[local_project_id] = {
+                                    'project_id': local_project_id,
+                                    'samplesheet': [],
+                                    'genome_size_mb': project.get('genome_size_mb', None),
+                                    'max_depth': project.get('max_depth', None),
+                                }
+                            samplesheet_library = {}
+                            library_id = library['sample_id']
+                            library_r1_fastq = find_fastq(run, library_id, 'R1')
+                            library_r2_fastq = find_fastq(run, library_id, 'R2')
+                            samplesheet_library['ID'] = library_id
+                            samplesheet_library['R1'] = library_r1_fastq
+                            samplesheet_library['R2'] = library_r2_fastq
+                            downsampling_inputs_by_project_id[local_project_id]['samplesheet'].append(samplesheet_library)
+
+    elif parsed_samplesheet is not None and instrument_type == 'miseq':
+        if 'data' in parsed_samplesheet:
+            for library in parsed_samplesheet['data']:
+                if 'sample_project' in library:
+                    for project in config['projects']:
+                        if library['sample_project'] == project['local_project_id']:
+                            local_project_id = project['local_project_id']
+                            if local_project_id not in downsampling_inputs_by_project_id:
+                                downsampling_inputs_by_project_id[local_project_id] = {
+                                    'project_id': local_project_id,
+                                    'samplesheet': [],
+                                    'genome_size_mb': project.get('genome_size_mb', None),
+                                    'max_depth': project.get('max_depth', None),
+                                }
+                            samplesheet_library = {}
+                            # There are two fields that can be used for a sample ID in the SampleSheet:
+                            # Sample_ID and Sample_Name. Sometimes Sample_ID is populated with
+                            # 'S1', 'S2', 'S3', etc. instead of the actual sample ID.
+                            # If that's the case, take the 'Sample_Name' from the SampleSheet.
+                            if re.match('S\d+$', library['sample_id']) and 'sample_name' in library:
+                                library_id = library['sample_name']
+                            else:
+                                library_id = library['sample_id']
+                            library_r1_fastq = find_fastq(run, library_id, 'R1')
+                            library_r2_fastq = find_fastq(run, library_id, 'R2')
+                            samplesheet_library['ID'] = library_id
+                            samplesheet_library['R1'] = library_r1_fastq
+                            samplesheet_library['R2'] = library_r2_fastq
+                            downsampling_inputs_by_project_id[local_project_id]['samplesheet'].append(samplesheet_library)
+
+    return downsampling_inputs_by_project_id
+
 
 def prepare_samplelist(config, run):
     """
