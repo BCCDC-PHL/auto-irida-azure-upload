@@ -322,6 +322,16 @@ def downsample_reads(config, downsampling_inputs):
             analysis_complete['analysis_success'] = True
             with open(os.path.join(output_dir, 'analysis_complete.json'), 'w') as f:
                 json.dump(analysis_complete, f, indent=2)
+            for library in samplesheet:
+                library_id = library['ID']
+                fastq_path_r1 = os.path.join(output_dir, library_id + '-downsample-' + str(max_depth) + 'x_R1.fastq.gz')
+                fastq_path_r2 = os.path.join(output_dir, library_id + '-downsample-' + str(max_depth) + 'x_R2.fastq.gz')
+                if os.path.exists(fastq_path_r1) and os.path.exists(fastq_path_r2):
+                    downsampled_reads[library_id] = {}
+                    downsampled_reads[library_id]['library_id'] = library_id
+                    downsampled_reads[library_id]['local_project_id'] = local_project_id
+                    downsampled_reads[library_id]['fastq_path_r1'] = fastq_path_r1
+                    downsampled_reads[library_id]['fastq_path_r2'] = fastq_path_r2
             logging.info(json.dumps({"event_type": "downsampling_complete", "sequencing_run_id": run_id, "project_id": local_project_id}))
         except subprocess.CalledProcessError as e:
             logging.error(json.dumps({"event_type": "downsampling_failed", "sequencing_run_id": run_id, "project_id": local_project_id, "command": " ".join(downsampling_command)}))

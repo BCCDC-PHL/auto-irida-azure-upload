@@ -64,6 +64,7 @@ def main():
                         # print(json.dumps(downsampling_inputs, indent=4))
                         # exit(0)
                         downsampled_reads = core.downsample_reads(config, downsampling_inputs)
+                        print(json.dumps(downsampled_reads, indent=4))
                         exit(0)
                     else:
                         downsampled_reads = None
