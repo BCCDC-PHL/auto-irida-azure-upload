@@ -340,7 +340,7 @@ def downsample_reads(config, downsampling_inputs):
     return downsampled_reads
     
 
-def prepare_samplelist(config, run):
+def prepare_samplelist(config, run, downsampled_reads={}):
     """
     Prepare a SampleList for a specific run.
 
@@ -399,7 +399,12 @@ def prepare_samplelist(config, run):
                             samples_to_upload.append(samplelist_library)
 
     for sample in samples_to_upload:
-        fastq_absolute_path_r1 = find_fastq(run, sample['Sample_Name'], 'R1')
+        library_id = sample['Sample_Name']
+        fastq_absolute_path_r1 = None
+        if library_id in downsampled_reads:
+            fastq_absolute_path_r1 = downsampled_reads[library_id]['fastq_path_r1']
+        else:
+            fastq_absolute_path_r1 = find_fastq(run, sample['Sample_Name'], 'R1')
         if fastq_absolute_path_r1 is not None:
             sample['File_Forward_Absolute_Path'] = fastq_absolute_path_r1
             fastq_filename_r1 = os.path.basename(fastq_absolute_path_r1)
@@ -411,7 +416,11 @@ def prepare_samplelist(config, run):
                                       "library_id": sample['Sample_Name'],
                                       "local_project_id": sample['Project_ID_Local'],
                                       "remote_project_id": sample['Project_ID']}))
-        fastq_absolute_path_r2 = find_fastq(run, sample['Sample_Name'], 'R2')
+        fastq_absolute_path_r2 = None
+        if library_id in downsampled_reads:
+            fastq_absolute_path_r2 = downsampled_reads[library_id]['fastq_path_r2']
+        else:
+            fastq_absolute_path_r2 = find_fastq(run, sample['Sample_Name'], 'R2')
         if fastq_absolute_path_r2 is not None:
             sample['File_Reverse_Absolute_Path'] = fastq_absolute_path_r2
             fastq_filename_r2 = os.path.basename(fastq_absolute_path_r2)

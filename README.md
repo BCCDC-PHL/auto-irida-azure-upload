@@ -67,7 +67,13 @@ If downsampling is needed prior to upload, add the following to the `config.json
 
 ```json
 {
-  "downsample_reads": true
+  "downsampling": {
+    "enabled": true,
+    "output_dir": "/path/to/downsampled-reads",
+    "work_dir": "/path/to/downsampling-work",
+    "pipeline_name": "BCCDC-PHL/downsample-reads",
+    "pipeline_version": "v0.1.0"
+  }
 }
 ```
 
