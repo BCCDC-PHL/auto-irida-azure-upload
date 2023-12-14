@@ -1,3 +1,4 @@
+import csv
 import datetime
 import glob
 import hashlib
@@ -186,7 +187,7 @@ def prepare_downsampling_inputs(config, run):
     :type config: dict[str, object]
     :param run: Sequencing run to prepare SampleSheet.csv file for. Keys: ['sequencing_run_id', 'path', 'instrument_type']
     :type run: dict[str, str]
-    :return: Downsampling inputs. { local_project_id: { project_id: str, samplesheet: list[dict[str, str]], genome_size_mb: int, max_depth: int } }. samplesheet: [ { ID: str, R1: str, R2: str } ]
+    :return: Downsampling inputs. { local_project_id: { sequencing_run_id: str, project_id: str, samplesheet: list[dict[str, str]], genome_size_mb: int, max_depth: int } }. samplesheet: [ { ID: str, R1: str, R2: str } ]
     :rtype: dict[str, dict[str, object]]
     """
     downsampling_inputs_by_project_id = {}
@@ -209,6 +210,7 @@ def prepare_downsampling_inputs(config, run):
                             local_project_id = project['local_project_id']
                             if local_project_id not in downsampling_inputs_by_project_id:
                                 downsampling_inputs_by_project_id[local_project_id] = {
+                                    'sequencing_run_id': run_id,
                                     'project_id': local_project_id,
                                     'samplesheet': [],
                                     'genome_size_mb': project.get('genome_size_mb', None),
@@ -232,6 +234,7 @@ def prepare_downsampling_inputs(config, run):
                             local_project_id = project['local_project_id']
                             if local_project_id not in downsampling_inputs_by_project_id:
                                 downsampling_inputs_by_project_id[local_project_id] = {
+                                    'sequencing_run_id': run_id,
                                     'project_id': local_project_id,
                                     'samplesheet': [],
                                     'genome_size_mb': project.get('genome_size_mb', None),
@@ -255,6 +258,77 @@ def prepare_downsampling_inputs(config, run):
 
     return downsampling_inputs_by_project_id
 
+
+def downsample_reads(config, downsampling_inputs):
+    """
+    Downsample reads.
+
+    :param config: Application config.
+    :type config: dict[str, object]
+    :param downsampling_inputs: Downsampling inputs. { local_project_id: { project_id: str, samplesheet: list[dict[str, str]], genome_size_mb: int, max_depth: int } }. samplesheet: [ { ID: str, R1: str, R2: str } ]
+    """
+    downsampled_reads = {}
+
+    for local_project_id, downsampling_input in downsampling_inputs.items():
+        run_id = downsampling_input['sequencing_run_id']
+        output_dir = os.path.join(config['downsampling']['output_dir'], run_id, local_project_id)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        samplesheet = downsampling_input['samplesheet']
+        downsampling_samplesheet_path = os.path.join(output_dir, '_'.join([run_id, local_project_id, 'samplesheet.csv']))
+        with open(downsampling_samplesheet_path, 'w') as f:
+            writer = csv.DictWriter(f, fieldnames=['ID', 'R1', 'R2'])
+            writer.writeheader()
+            for library in samplesheet:
+                writer.writerow(library)
+        logging.info(json.dumps({"event_type": "downsampling_samplesheet_created", "sequencing_run_id": run_id, "project_id": local_project_id, "samplesheet_path": downsampling_samplesheet_path}))
+        genome_size_mb = downsampling_input['genome_size_mb']
+        max_depth = downsampling_input['max_depth']
+        if genome_size_mb is None or max_depth is None:
+            continue
+        if len(samplesheet) < 1:
+            continue
+
+        pipeline_name = config['downsampling']['pipeline_name']
+        pipeline_version = config['downsampling']['pipeline_version']
+        analysis_log_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, local_project_id, 'analysis.log'])))
+        analysis_report_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, local_project_id, 'nextflow_report.html'])))
+        analysis_trace_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, local_project_id, 'nextflow_trace.tsv'])))
+        analysis_timeline_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, local_project_id, 'nextflow_timeline.html'])))
+        work_dir = config['downsampling']['work_dir']
+        downsampling_command = [
+            'nextflow',
+            '-log', analysis_log_path,
+            'run',
+            pipeline_name,
+            '-r',
+            pipeline_version,
+            '-profile', 'conda',
+            '--cache', os.path.join(os.path.expanduser('~'), '.conda/envs'),
+            '--samplesheet_input', downsampling_samplesheet_path,
+            '--genome_size', "'" + str(genome_size_mb) + "m'",
+            '--coverage', str(max_depth),
+            '--outdir', output_dir,
+            '-work-dir', work_dir,
+            '-with-report', analysis_report_path,
+            '-with-trace', analysis_trace_path,
+            '-with-timeline', analysis_timeline_path,
+        ]
+        logging.info(json.dumps({"event_type": "downsampling_started", "sequencing_run_id": run_id, "project_id": local_project_id}))
+        analysis_complete = {"timestamp_analysis_start": datetime.datetime.now().isoformat()}
+        try:
+            analysis_result = subprocess.run(downsampling_command, capture_output=True, check=True)
+            analysis_complete['timestamp_analysis_complete'] = datetime.datetime.now().isoformat()
+            analysis_complete['analysis_success'] = True
+            with open(os.path.join(output_dir, 'analysis_complete.json'), 'w') as f:
+                json.dump(analysis_complete, f, indent=2)
+            logging.info(json.dumps({"event_type": "downsampling_complete", "sequencing_run_id": run_id, "project_id": local_project_id}))
+        except subprocess.CalledProcessError as e:
+            logging.error(json.dumps({"event_type": "downsampling_failed", "sequencing_run_id": run_id, "project_id": local_project_id, "command": " ".join(downsampling_command)}))
+            continue
+        
+    return downsampled_reads
+    
 
 def prepare_samplelist(config, run):
     """
