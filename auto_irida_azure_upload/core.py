@@ -48,6 +48,8 @@ def find_run_dirs(config, check_upload_complete=True):
             not_excluded = False
             if 'excluded_runs' in config:
                 not_excluded = not run_id in config['excluded_runs']
+            else:
+                not_excluded = True
 
             conditions_checked = {
                 "is_directory": subdir.is_dir(),
