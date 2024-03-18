@@ -1,3 +1,5 @@
+[![Unit Tests](https://github.com/BCCDC-PHL/auto-irida-azure-upload/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/BCCDC-PHL/auto-irida-azure-upload/actions/workflows/unit_tests.yml)
+
 # auto-irida-azure-upload
 Automated upload of sequence data to the IRIDA platform.
 
