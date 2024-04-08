@@ -181,7 +181,7 @@ def find_fastq(run, library_id, read_type):
     return fastq_path
 
 
-def prepare_downsampling_inputs(config, run):
+def prepare_downsampling_samplesheet(config, run):
     """
     Prepare a SampleSheet to use for downsampling.
 
@@ -189,10 +189,10 @@ def prepare_downsampling_inputs(config, run):
     :type config: dict[str, object]
     :param run: Sequencing run to prepare SampleSheet.csv file for. Keys: ['sequencing_run_id', 'path', 'instrument_type']
     :type run: dict[str, str]
-    :return: Downsampling inputs. { local_project_id: { sequencing_run_id: str, project_id: str, samplesheet: list[dict[str, str]], genome_size_mb: int, max_depth: int } }. samplesheet: [ { ID: str, R1: str, R2: str } ]
-    :rtype: dict[str, dict[str, object]]
+    :return: Downsampling samplesheet [ { ID: str, R1: str, R2: str, GENOME_SIZE: str, COVERAGE: str } ]
+    :rtype: list[dict[str, str]]
     """
-    downsampling_inputs_by_project_id = {}
+    downsampling_samplesheet = []
     run_id = run['sequencing_run_id']
     run_dir = run['path']
     instrument_type = run['instrument_type']
@@ -210,14 +210,6 @@ def prepare_downsampling_inputs(config, run):
                     for project in config['projects']:
                         if library['project_name'] == project['local_project_id'] and project.get('downsample_reads', False):
                             local_project_id = project['local_project_id']
-                            if local_project_id not in downsampling_inputs_by_project_id:
-                                downsampling_inputs_by_project_id[local_project_id] = {
-                                    'sequencing_run_id': run_id,
-                                    'project_id': local_project_id,
-                                    'samplesheet': [],
-                                    'genome_size_mb': project.get('genome_size_mb', None),
-                                    'max_depth': project.get('max_depth', None),
-                                }
                             samplesheet_library = {}
                             library_id = library['sample_id']
                             library_r1_fastq = find_fastq(run, library_id, 'R1')
@@ -225,7 +217,12 @@ def prepare_downsampling_inputs(config, run):
                             samplesheet_library['ID'] = library_id
                             samplesheet_library['R1'] = library_r1_fastq
                             samplesheet_library['R2'] = library_r2_fastq
-                            downsampling_inputs_by_project_id[local_project_id]['samplesheet'].append(samplesheet_library)
+                            try:
+                                samplesheet_library['GENOME_SIZE'] = str(project['genome_size_mb']) + 'm'
+                            except KeyError as e:
+                                samplesheet_library['GENOME_SIZE'] = None
+                            samplesheet_library['COVERAGE'] = str(project.get('max_depth', None))
+                            downsampling_samplesheet.append(samplesheet_library)
 
     elif parsed_samplesheet is not None and instrument_type == 'miseq':
         if 'data' in parsed_samplesheet:
@@ -234,14 +231,6 @@ def prepare_downsampling_inputs(config, run):
                     for project in config['projects']:
                         if library['sample_project'] == project['local_project_id']:
                             local_project_id = project['local_project_id']
-                            if local_project_id not in downsampling_inputs_by_project_id:
-                                downsampling_inputs_by_project_id[local_project_id] = {
-                                    'sequencing_run_id': run_id,
-                                    'project_id': local_project_id,
-                                    'samplesheet': [],
-                                    'genome_size_mb': project.get('genome_size_mb', None),
-                                    'max_depth': project.get('max_depth', None),
-                                }
                             samplesheet_library = {}
                             # There are two fields that can be used for a sample ID in the SampleSheet:
                             # Sample_ID and Sample_Name. Sometimes Sample_ID is populated with
@@ -256,88 +245,87 @@ def prepare_downsampling_inputs(config, run):
                             samplesheet_library['ID'] = library_id
                             samplesheet_library['R1'] = library_r1_fastq
                             samplesheet_library['R2'] = library_r2_fastq
-                            downsampling_inputs_by_project_id[local_project_id]['samplesheet'].append(samplesheet_library)
+                            try:
+                                samplesheet_library['GENOME_SIZE'] = str(project['genome_size_mb']) + 'm'
+                            except KeyError as e:
+                                samplesheet_library['GENOME_SIZE'] = None
+                            samplesheet_library['COVERAGE'] = str(project.get('max_depth', None))
+                            downsampling_samplesheet.append(samplesheet_library)
 
-    return downsampling_inputs_by_project_id
+    return downsampling_samplesheet
 
 
-def downsample_reads(config, downsampling_inputs):
+def downsample_reads(config, run_id, samplesheet):
     """
     Downsample reads.
 
     :param config: Application config.
     :type config: dict[str, object]
-    :param downsampling_inputs: Downsampling inputs. { local_project_id: { project_id: str, samplesheet: list[dict[str, str]], genome_size_mb: int, max_depth: int } }. samplesheet: [ { ID: str, R1: str, R2: str } ]
+    :param run_id: Sequencing run ID.
+    :type run_id: str
+    :param samplesheet: samplesheet: [ { ID: str, R1: str, R2: str , GENOME_SIZE: str, COVERAGE: str} ]
     """
     downsampled_reads = {}
 
-    for local_project_id, downsampling_input in downsampling_inputs.items():
-        run_id = downsampling_input['sequencing_run_id']
-        output_dir = os.path.join(config['downsampling']['output_dir'], run_id, local_project_id)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        samplesheet = downsampling_input['samplesheet']
-        downsampling_samplesheet_path = os.path.join(output_dir, '_'.join([run_id, local_project_id, 'samplesheet.csv']))
-        with open(downsampling_samplesheet_path, 'w') as f:
-            writer = csv.DictWriter(f, fieldnames=['ID', 'R1', 'R2'])
-            writer.writeheader()
-            for library in samplesheet:
-                writer.writerow(library)
-        logging.info(json.dumps({"event_type": "downsampling_samplesheet_created", "sequencing_run_id": run_id, "project_id": local_project_id, "samplesheet_path": downsampling_samplesheet_path}))
-        genome_size_mb = downsampling_input['genome_size_mb']
-        max_depth = downsampling_input['max_depth']
-        if genome_size_mb is None or max_depth is None:
-            continue
-        if len(samplesheet) < 1:
-            continue
+    
+    output_dir = os.path.join(config['downsampling']['output_dir'], run_id)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-        pipeline_name = config['downsampling']['pipeline_name']
-        pipeline_version = config['downsampling']['pipeline_version']
-        analysis_log_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, local_project_id, 'analysis.log'])))
-        analysis_report_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, local_project_id, 'nextflow_report.html'])))
-        analysis_trace_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, local_project_id, 'nextflow_trace.tsv'])))
-        analysis_timeline_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, local_project_id, 'nextflow_timeline.html'])))
-        work_dir = config['downsampling']['work_dir']
-        downsampling_command = [
-            'nextflow',
-            '-log', analysis_log_path,
-            'run',
-            pipeline_name,
-            '-r',
-            pipeline_version,
-            '-profile', 'conda',
-            '--cache', os.path.join(os.path.expanduser('~'), '.conda/envs'),
-            '--samplesheet_input', downsampling_samplesheet_path,
-            '--genome_size', "'" + str(genome_size_mb) + "m'",
-            '--coverage', str(max_depth),
-            '--outdir', output_dir,
-            '-work-dir', work_dir,
-            '-with-report', analysis_report_path,
-            '-with-trace', analysis_trace_path,
-            '-with-timeline', analysis_timeline_path,
-        ]
-        logging.info(json.dumps({"event_type": "downsampling_started", "sequencing_run_id": run_id, "project_id": local_project_id}))
-        analysis_complete = {"timestamp_analysis_start": datetime.datetime.now().isoformat()}
-        try:
-            analysis_result = subprocess.run(downsampling_command, capture_output=True, check=True)
-            analysis_complete['timestamp_analysis_complete'] = datetime.datetime.now().isoformat()
-            analysis_complete['analysis_success'] = True
-            with open(os.path.join(output_dir, 'analysis_complete.json'), 'w') as f:
-                json.dump(analysis_complete, f, indent=2)
-            for library in samplesheet:
-                library_id = library['ID']
-                fastq_path_r1 = os.path.join(output_dir, library_id + '-downsample-' + str(max_depth) + 'x_R1.fastq.gz')
-                fastq_path_r2 = os.path.join(output_dir, library_id + '-downsample-' + str(max_depth) + 'x_R2.fastq.gz')
-                if os.path.exists(fastq_path_r1) and os.path.exists(fastq_path_r2):
-                    downsampled_reads[library_id] = {}
-                    downsampled_reads[library_id]['library_id'] = library_id
-                    downsampled_reads[library_id]['local_project_id'] = local_project_id
-                    downsampled_reads[library_id]['fastq_path_r1'] = fastq_path_r1
-                    downsampled_reads[library_id]['fastq_path_r2'] = fastq_path_r2
-            logging.info(json.dumps({"event_type": "downsampling_complete", "sequencing_run_id": run_id, "project_id": local_project_id}))
-        except subprocess.CalledProcessError as e:
-            logging.error(json.dumps({"event_type": "downsampling_failed", "sequencing_run_id": run_id, "project_id": local_project_id, "command": " ".join(downsampling_command)}))
-            continue
+    downsampling_samplesheet_path = os.path.join(output_dir, '_'.join([run_id, 'samplesheet.csv']))
+    with open(downsampling_samplesheet_path, 'w') as f:
+        writer = csv.DictWriter(f, fieldnames=['ID', 'R1', 'R2', 'GENOME_SIZE', 'COVERAGE'])
+        writer.writeheader()
+        for library in samplesheet:
+            writer.writerow(library)
+    logging.info(json.dumps({"event_type": "downsampling_samplesheet_created", "sequencing_run_id": run_id, "samplesheet_path": downsampling_samplesheet_path}))
+
+    if len(samplesheet) < 1:
+        return downsampled_reads
+
+    pipeline_name = config['downsampling']['pipeline_name']
+    pipeline_version = config['downsampling']['pipeline_version']
+    analysis_log_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, 'analysis.log'])))
+    analysis_report_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, 'nextflow_report.html'])))
+    analysis_trace_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, 'nextflow_trace.tsv'])))
+    analysis_timeline_path = os.path.abspath(os.path.join(output_dir, '_'.join([run_id, 'nextflow_timeline.html'])))
+    work_dir = config['downsampling']['work_dir']
+    downsampling_command = [
+        'nextflow',
+        '-log', analysis_log_path,
+        'run',
+        pipeline_name,
+        '-r',
+        pipeline_version,
+        '-profile', 'conda',
+        '--cache', os.path.join(os.path.expanduser('~'), '.conda/envs'),
+        '--samplesheet_input', downsampling_samplesheet_path,
+        '--outdir', output_dir,
+        '-work-dir', work_dir,
+        '-with-report', analysis_report_path,
+        '-with-trace', analysis_trace_path,
+        '-with-timeline', analysis_timeline_path,
+    ]
+    logging.info(json.dumps({"event_type": "downsampling_started", "sequencing_run_id": run_id, output_dir: output_dir}))
+    analysis_complete = {"timestamp_analysis_start": datetime.datetime.now().isoformat()}
+    try:
+        analysis_result = subprocess.run(downsampling_command, capture_output=True, check=True)
+        analysis_complete['timestamp_analysis_complete'] = datetime.datetime.now().isoformat()
+        analysis_complete['analysis_success'] = True
+        with open(os.path.join(output_dir, 'analysis_complete.json'), 'w') as f:
+            json.dump(analysis_complete, f, indent=2)
+        for library in samplesheet:
+            library_id = library['ID']
+            fastq_path_r1 = os.path.join(output_dir, library_id + '-downsample-' + str(max_depth) + 'x_R1.fastq.gz')
+            fastq_path_r2 = os.path.join(output_dir, library_id + '-downsample-' + str(max_depth) + 'x_R2.fastq.gz')
+            if os.path.exists(fastq_path_r1) and os.path.exists(fastq_path_r2):
+                downsampled_reads[library_id] = {}
+                downsampled_reads[library_id]['library_id'] = library_id
+                downsampled_reads[library_id]['fastq_path_r1'] = fastq_path_r1
+                downsampled_reads[library_id]['fastq_path_r2'] = fastq_path_r2
+        logging.info(json.dumps({"event_type": "downsampling_complete", "sequencing_run_id": run_id}))
+    except subprocess.CalledProcessError as e:
+        logging.error(json.dumps({"event_type": "downsampling_failed", "sequencing_run_id": run_id, "command": " ".join(downsampling_command)}))
         
     return downsampled_reads
     

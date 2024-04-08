@@ -61,8 +61,8 @@ def main():
                         logging.error(json.dumps({"event_type": "load_config_failed", "config_file": os.path.abspath(args.config)}))
                     downsampled_reads = {}
                     if config.get('downsampling', {}).get('enabled', False):
-                        downsampling_inputs = core.prepare_downsampling_inputs(config, run)
-                        downsampled_reads = core.downsample_reads(config, downsampling_inputs)
+                        downsampling_samplesheet = core.prepare_downsampling_samplesheet(config, run)
+                        downsampled_reads = core.downsample_reads(config, run['sequencing_run_id'], downsampling_samplesheet)
                     sample_list = core.prepare_samplelist(config, run, downsampled_reads)
                     if len(sample_list) > 0:
                         upload_dir = core.prepare_upload_dir(config, run, sample_list)
