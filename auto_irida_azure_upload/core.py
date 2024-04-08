@@ -42,7 +42,15 @@ def find_run_dirs(config, check_upload_complete=True):
                 instrument_type = 'miseq'
             elif matches_nextseq_regex:
                 instrument_type = 'nextseq'
-            ready_to_upload = os.path.exists(os.path.join(subdir, 'upload_complete.json'))
+            upload_complete = os.path.exists(os.path.join(subdir, 'upload_complete.json'))
+            qc_check_complete = os.path.exists(os.path.join(subdir, 'qc_check_complete.json'))
+            qc_check_passed = False
+            qc_check = {}
+            if check_upload_complete:
+                with open(os.path.join(subdir, 'qc_check_complete.json'), 'r') as f:
+                    qc_check = json.load(f)
+                if re.match("PASS", qc_check.get("overall_pass_fail", "")):
+                    qc_check_passed = True
             upload_not_already_initiated = not os.path.exists(os.path.join(config['upload_staging_dir'], run_id))
             not_excluded = False
             if 'excluded_runs' in config:
@@ -52,12 +60,12 @@ def find_run_dirs(config, check_upload_complete=True):
                 "is_directory": subdir.is_dir(),
                 "matches_illumina_run_id_format": ((matches_miseq_regex is not None) or
                                                    (matches_nextseq_regex is not None)),
+                "upload_complete": upload_complete,
+                "qc_check_complete": qc_check_complete,
+                "qc_check_passed": qc_check_passed,
                 "upload_not_already_initiated": upload_not_already_initiated,
                 "not_excluded": not_excluded,
             }
-
-            if check_upload_complete:
-                conditions_checked["ready_to_upload"] = ready_to_upload
 
             conditions_met = list(conditions_checked.values())
             run = {}
