@@ -316,8 +316,9 @@ def downsample_reads(config, run_id, samplesheet):
             json.dump(analysis_complete, f, indent=2)
         for library in samplesheet:
             library_id = library['ID']
-            fastq_path_r1 = os.path.join(output_dir, library_id + '-downsample-' + str(max_depth) + 'x_R1.fastq.gz')
-            fastq_path_r2 = os.path.join(output_dir, library_id + '-downsample-' + str(max_depth) + 'x_R2.fastq.gz')
+            max_depth = library['COVERAGE']
+            fastq_path_r1 = os.path.join(output_dir, library_id, library_id + '-downsample-' + str(max_depth) + 'x_R1.fastq.gz')
+            fastq_path_r2 = os.path.join(output_dir, library_id, library_id + '-downsample-' + str(max_depth) + 'x_R2.fastq.gz')
             if os.path.exists(fastq_path_r1) and os.path.exists(fastq_path_r2):
                 downsampled_reads[library_id] = {}
                 downsampled_reads[library_id]['library_id'] = library_id
@@ -328,7 +329,7 @@ def downsample_reads(config, run_id, samplesheet):
         logging.error(json.dumps({"event_type": "downsampling_failed", "sequencing_run_id": run_id, "command": " ".join(downsampling_command)}))
         
     return downsampled_reads
-    
+
 
 def prepare_samplelist(config, run, downsampled_reads={}):
     """
