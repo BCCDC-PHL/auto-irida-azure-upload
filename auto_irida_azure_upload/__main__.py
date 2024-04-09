@@ -36,6 +36,8 @@ def main():
     quit_when_safe = False
 
     while(True):
+        if quit_when_safe:
+            exit(0)
         try:
             if args.config:
                 try:
@@ -73,7 +75,8 @@ def main():
             scan_complete_timestamp = datetime.datetime.now()
             scan_duration_delta = scan_complete_timestamp - scan_start_timestamp
             scan_duration_seconds = scan_duration_delta.total_seconds()
-            logging.info(json.dumps({"event_type": "scan_complete", "scan_duration_seconds": scan_duration_seconds}))
+            next_scan_timestamp = scan_start_timestamp + datetime.timedelta(seconds=scan_duration_seconds)
+            logging.info(json.dumps({"event_type": "scan_complete", "scan_duration_seconds": scan_duration_seconds, "timestamp_next_scan_start": next_scan_timestamp.isoformat()}))
 
             if quit_when_safe:
                 exit(0)
