@@ -4,7 +4,7 @@ import json
 
 import auto_irida_azure_upload.samplesheet as samplesheet
 
-TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data'))
+TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data'))
 
 class TestFindSampleSheets(unittest.TestCase):
     """

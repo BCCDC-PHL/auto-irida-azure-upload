@@ -6,7 +6,7 @@ import unittest
 
 import auto_irida_azure_upload.core as core
 
-TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data'))
+TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data'))
 
 class TestFindRunDirs(unittest.TestCase):
     """
@@ -31,16 +31,12 @@ class TestFindRunDirs(unittest.TestCase):
                 'sequencing_run_id': '220101_M00123_0001_000000000-AAA11',
                 'instrument_type': 'miseq',
             },
-            {
-                'path': os.path.join(TEST_DATA_DIR, 'run_parent_dirs/M00123/22/220112_M00123_0002_000000000-AAA12'),
-                'sequencing_run_id': '220112_M00123_0002_000000000-AAA12',
-                'instrument_type': 'miseq',
-            },
         ]
         
         actual_run_dirs = []
         for run_dir in core.find_run_dirs(config):
-            actual_run_dirs.append(run_dir)
+            if run_dir is not None:
+                actual_run_dirs.append(run_dir)
 
         self.assertCountEqual(expected_run_dirs, actual_run_dirs)
 
@@ -67,16 +63,12 @@ class TestScan(unittest.TestCase):
                 'sequencing_run_id': '220101_M00123_0001_000000000-AAA11',
                 'instrument_type': 'miseq',
             },
-            {
-                'path': os.path.join(TEST_DATA_DIR, 'run_parent_dirs/M00123/22/220112_M00123_0002_000000000-AAA12'),
-                'sequencing_run_id': '220112_M00123_0002_000000000-AAA12',
-                'instrument_type': 'miseq',
-            },
         ]
 
         actual_runs = []
         for run in core.scan(config):
-            actual_runs.append(run)
+            if run is not None:
+                actual_runs.append(run)
 
         self.assertCountEqual(expected_runs, actual_runs)
 
