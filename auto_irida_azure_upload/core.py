@@ -47,11 +47,10 @@ def find_run_dirs(config, check_upload_complete=True):
             qc_check_complete = os.path.exists(os.path.join(subdir, 'qc_check_complete.json'))
             qc_check_passed = False
             qc_check = {}
-            if check_upload_complete:
-                with open(os.path.join(subdir, 'qc_check_complete.json'), 'r') as f:
-                    qc_check = json.load(f)
-                if re.match("PASS", qc_check.get("overall_pass_fail", "")):
-                    qc_check_passed = True
+            with open(os.path.join(subdir, 'qc_check_complete.json'), 'r') as f:
+                qc_check = json.load(f)
+            if re.match("PASS", qc_check.get("overall_pass_fail", "")):
+                qc_check_passed = True
             upload_not_already_initiated = not os.path.exists(os.path.join(config['upload_staging_dir'], run_id))
             not_excluded = False
             if 'excluded_runs' in config:
