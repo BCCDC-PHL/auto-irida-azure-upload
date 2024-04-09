@@ -1,3 +1,5 @@
+[![Unit Tests](https://github.com/BCCDC-PHL/auto-irida-azure-upload/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/BCCDC-PHL/auto-irida-azure-upload/actions/workflows/unit_tests.yml)
+
 # auto-irida-azure-upload
 Automated upload of sequence data to the IRIDA platform.
 
@@ -59,6 +61,37 @@ local_project_id
 local_project_name
 remote_project_id
 remote_project_name
+```
+
+## Downsampling
+
+If downsampling is needed prior to upload, add the following to the `config.json` file:
+
+```json
+{
+  "downsampling": {
+    "enabled": true,
+    "output_dir": "/path/to/downsampled-reads",
+    "work_dir": "/path/to/downsampling-work",
+    "pipeline_name": "BCCDC-PHL/downsample-reads",
+    "pipeline_version": "v0.2.0"
+  }
+}
+```
+
+...and the following fields to the `projects.csv` file:
+
+```
+downsample_reads
+genome_size_mb
+max_depth
+```
+
+# Application Flowchart
+
+```mermaid
+main('__main__.main')
+main --> scan('core.scan')
 ```
 
 # Logging
