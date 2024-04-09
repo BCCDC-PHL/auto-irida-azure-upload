@@ -109,7 +109,7 @@ class TestFindFastq(unittest.TestCase):
 class TestPrepareDownsamplingInputs(unittest.TestCase):
     """
     """
-    def test_prepare_downsampling_inputs(self):
+    def test_prepare_downsampling_samplesheet(self):
         """
         Test that the function returns the correct downsampling inputs
         """
@@ -125,12 +125,18 @@ class TestPrepareDownsamplingInputs(unittest.TestCase):
                     'local_project_name': 'Data Sharing',
                     'remote_project_id': '42',
                     'remote_project_name': 'BC Data',
+                    'downsample_reads': True,
+                    'genome_size_mb': 5.0,
+                    'max_depth': 50,
                 },
                 {
                     'local_project_id': 'new_project',
                     'local_project_name': 'New Project',
                     'remote_project_id': '48',
                     'remote_project_name': 'BC New Test Project',
+                    'downsample_reads': False,
+                    'genome_size_mb': 5.0,
+                    'max_depth': 50,
                 },
             ]
         }
@@ -139,88 +145,80 @@ class TestPrepareDownsamplingInputs(unittest.TestCase):
             'instrument_type': 'miseq',
             'path': os.path.join(TEST_DATA_DIR, 'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11'),
         }
-        expected_downsampling_inputs_by_project_id = {
-            'data_sharing': {
-                'genome_size_mb': None,
-                'max_depth': None,
-                'project_id': 'data_sharing',
-                'samplesheet': [
-                    {
-                        'ID': 'sample-01-A01',
-                        'R1': os.path.join(
-                            TEST_DATA_DIR,
-                            'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
-                            'Data/Intensities/BaseCalls',
-                            'sample-01-A01_S1_L001_R1_001.fastq.gz'
-                        ),
-                        'R2': os.path.join(
-                            TEST_DATA_DIR,
-                            'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
-                            'Data/Intensities/BaseCalls',
-                            'sample-01-A01_S1_L001_R2_001.fastq.gz'
-                        ),
-                    },
-                    {
-                        'ID': 'sample-02-B01',
-                        'R1': os.path.join(
-                            TEST_DATA_DIR,
-                            'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
-                            'Data/Intensities/BaseCalls',
-                            'sample-02-B01_S2_L001_R1_001.fastq.gz'
-                        ),
-                        'R2': os.path.join(
-                            TEST_DATA_DIR,
-                            'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
-                            'Data/Intensities/BaseCalls',
-                            'sample-02-B01_S2_L001_R2_001.fastq.gz'
-                        ),
-                    },
-                ],
-                'sequencing_run_id': '220101_M00123_0001_000000000-AAA11',
+        expected_downsampling_samplesheet = [
+            {
+                'ID': 'sample-01-A01',
+                'R1': os.path.join(
+                    TEST_DATA_DIR,
+                    'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
+                    'Data/Intensities/BaseCalls',
+                    'sample-01-A01_S1_L001_R1_001.fastq.gz'
+                ),
+                'R2': os.path.join(
+                    TEST_DATA_DIR,
+                    'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
+                    'Data/Intensities/BaseCalls',
+                    'sample-01-A01_S1_L001_R2_001.fastq.gz'
+                ),
+                'GENOME_SIZE': '5.0m',
+                'COVERAGE': '50',
             },
-            'new_project': {
-                'genome_size_mb': None,
-                'max_depth': None,
-                'project_id': 'new_project',
-                'samplesheet': [
-                    {
-                        'ID': 'sample-05-E01',
-                        'R1': os.path.join(
-                            TEST_DATA_DIR,
-                            'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
-                            'Data/Intensities/BaseCalls',
-                            'sample-05-E01_S5_L001_R1_001.fastq.gz'
-                        ),
-                        'R2': os.path.join(
-                            TEST_DATA_DIR,
-                            'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
-                            'Data/Intensities/BaseCalls',
-                            'sample-05-E01_S5_L001_R2_001.fastq.gz'
-                        ),
-                    },
-                    {
-                        'ID': 'sample-06-F01',
-                        'R1': os.path.join(
-                            TEST_DATA_DIR,
-                            'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
-                            'Data/Intensities/BaseCalls',
-                            'sample-06-F01_S6_L001_R1_001.fastq.gz'
-                        ),
-                        'R2': os.path.join(
-                            TEST_DATA_DIR,
-                            'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
-                            'Data/Intensities/BaseCalls',
-                            'sample-06-F01_S6_L001_R2_001.fastq.gz'
-                        ),
-                    },
-                ],
-                'sequencing_run_id': '220101_M00123_0001_000000000-AAA11',
-            }
-        }
+            {
+                'ID': 'sample-02-B01',
+                'R1': os.path.join(
+                    TEST_DATA_DIR,
+                    'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
+                    'Data/Intensities/BaseCalls',
+                    'sample-02-B01_S2_L001_R1_001.fastq.gz'
+                ),
+                'R2': os.path.join(
+                    TEST_DATA_DIR,
+                    'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
+                    'Data/Intensities/BaseCalls',
+                    'sample-02-B01_S2_L001_R2_001.fastq.gz'
+                ),
+                'GENOME_SIZE': '5.0m',
+                'COVERAGE': '50',
+            },
+            {
+                'ID': 'sample-05-E01',
+                'R1': os.path.join(
+                    TEST_DATA_DIR,
+                    'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
+                    'Data/Intensities/BaseCalls',
+                    'sample-05-E01_S5_L001_R1_001.fastq.gz'
+                ),
+                'R2': os.path.join(
+                    TEST_DATA_DIR,
+                    'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
+                    'Data/Intensities/BaseCalls',
+                    'sample-05-E01_S5_L001_R2_001.fastq.gz'
+                ),
+                'GENOME_SIZE': '5.0m',
+                'COVERAGE': '50',
+            },
+            {
+                'ID': 'sample-06-F01',
+                'R1': os.path.join(
+                    TEST_DATA_DIR,
+                    'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
+                    'Data/Intensities/BaseCalls',
+                    'sample-06-F01_S6_L001_R1_001.fastq.gz'
+                ),
+                'R2': os.path.join(
+                    TEST_DATA_DIR,
+                    'run_parent_dirs/M00123/22/220101_M00123_0001_000000000-AAA11',
+                    'Data/Intensities/BaseCalls',
+                    'sample-06-F01_S6_L001_R2_001.fastq.gz'
+                ),
+                'GENOME_SIZE': '5.0m',
+                'COVERAGE': '50',
+            },
+        ]
 
-        actual_downsampling_inputs_by_project_id = core.prepare_downsampling_inputs(config, run)
+        actual_downsampling_samplesheet = core.prepare_downsampling_samplesheet(config, run)
 
-        self.assertEqual(expected_downsampling_inputs_by_project_id, actual_downsampling_inputs_by_project_id)
+        self.assertEqual(expected_downsampling_samplesheet, actual_downsampling_samplesheet)
 
 
 if __name__ == '__main__':
