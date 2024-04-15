@@ -44,11 +44,13 @@ def find_run_dirs(config, check_upload_complete=True):
             elif matches_nextseq_regex:
                 instrument_type = 'nextseq'
             upload_complete = os.path.exists(os.path.join(subdir, 'upload_complete.json'))
-            qc_check_complete = os.path.exists(os.path.join(subdir, 'qc_check_complete.json'))
+            qc_check_complete_path = os.path.exists(os.path.join(subdir, 'qc_check_complete.json'))
+            qc_check_complete_file_exists = os.path.exists(os.path.join(subdir, 'qc_check_complete.json'))
             qc_check_passed = False
             qc_check = {}
-            with open(os.path.join(subdir, 'qc_check_complete.json'), 'r') as f:
-                qc_check = json.load(f)
+            if qc_check_complete_file_exists:
+                with open(os.path.join(subdir, 'qc_check_complete.json'), 'r') as f:
+                    qc_check = json.load(f)
             if re.match("PASS", qc_check.get("overall_pass_fail", "")):
                 qc_check_passed = True
             upload_not_already_initiated = not os.path.exists(os.path.join(config['upload_staging_dir'], run_id))
